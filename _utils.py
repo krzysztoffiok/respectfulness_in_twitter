@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_selection import mutual_info_classif
+from sklearn.model_selection import KFold
 
 
 def train_model_for_shap(allFeatures, train_ml, test_ml, df_ml, classification_model, language_model, fold):
@@ -100,10 +101,12 @@ def ML_classification(allFeatures, train_ml, test_ml, df_ml, classification_mode
     return sum(preds, []), sum(trues, [])
 
 
-def compute_metrics(dependent_variable, test_run):
+def compute_metrics(dependent_variable, test_run, data_file_name):
     # read result files to compute metrics including SemEval2017-specific
-    preds = dt.fread(f"./data/{dependent_variable}_{test_run}_predictions.csv").to_pandas()
-    trues = dt.fread(f"./data/{dependent_variable}_{test_run}_trues.csv").to_pandas()
+    preds = dt.fread(f"./data/partial_results/{dependent_variable}_{data_file_name}_{test_run}"
+                     f"_predictions.csv").to_pandas()
+    trues = dt.fread(f"./data/partial_results/{dependent_variable}_{data_file_name}_{test_run}"
+                     f"_trues.csv").to_pandas()
     modelColNames = preds.columns.to_list()
     modelColNames.remove("C0")
 
@@ -140,7 +143,7 @@ def compute_metrics(dependent_variable, test_run):
         allmetrics[model] = model_metrics
 
     dfmetrics = pd.DataFrame.from_dict(allmetrics)
-    dfmetrics.to_csv(f"./results/{dependent_variable}_{test_run}_metric_results.csv")
+    dfmetrics.to_csv(f"./results/{dependent_variable}_{data_file_name}_{test_run}_metric_results.csv")
     print(dfmetrics)
 
 
@@ -214,3 +217,24 @@ def term_frequency(train_ml, dfliwc, df, allFeatures, dependent_variable):
     dftf.columns = [f"TF_{x}" for x in dftf.columns]
 
     return dftf, allFeatures
+
+
+def splitter(folds, df):
+
+    # this split (with folds=5) results in: 20% test, 10% val, 70% train for Flair framework
+    # and the same 20% test and 80 % train for Machine Learning
+    indexes = list(range(0, len(df)))
+
+    # setup random state and folds
+    np.random.seed(13)
+    if folds >= 2:
+        kf = KFold(n_splits=folds, random_state=13, shuffle=True)
+        kf = kf.split(indexes)
+    elif folds == 1:
+        kf = KFold(n_splits=2, random_state=13, shuffle=True)
+        kf = kf.split(indexes)
+    elif folds == 0:
+        print("Please provide a number greater than 0.")
+        quit()
+    return kf
+

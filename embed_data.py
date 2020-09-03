@@ -6,6 +6,7 @@ import torch
 import datatable
 import time
 import math
+import os
 
 """ example use to create tweet-level embeddings
 # remember to start by setting a proper --dependent_variable
@@ -41,8 +42,11 @@ parser.add_argument("--pool", required=False, default=False, type=bool)
 parser.add_argument("--use", required=False, default=False, type=bool)
 parser.add_argument('--dependent_variable', required=False, type=str, default='respect')
 parser.add_argument("--bs", required=False, default=32, type=int)
+parser.add_argument("--filepath", required=False, default='input_file.xlsx', type=str)
 args = parser.parse_args()
 
+filepath = os.path.join('./data/source_data/', args.filepath)
+data_file_name = args.filepath.split('.')[0]
 fold = args.fold
 test_run = args.test_run
 if "/" in test_run:
@@ -55,7 +59,7 @@ dependent_variable = args.dependent_variable
 bs = args.bs
 
 # read data
-df = pd.read_excel(f"./data/source_data/input_file.xlsx", converters={'dummy_id': str})
+df = pd.read_excel(filepath, converters={'dummy_id': str})
 
 print(len(df))
 df = df.head(nrows)
@@ -72,13 +76,14 @@ if not _use:
 
     # load various embeddings
     from flair.embeddings import WordEmbeddings, DocumentPoolEmbeddings, RoBERTaEmbeddings,\
-        SentenceTransformerDocumentEmbeddings
+        SentenceTransformerDocumentEmbeddings, TransformerWordEmbeddings
     from flair.data import Sentence
 
     # if trained embeddings
     if not pool:
         # embeddings trained to the "downstream task"
-        model = TextClassifier.load(f'./data/model_{dependent_variable}_{fold}/{test_run}_best-model.pt')
+        model = TextClassifier.load(f'./data/models/{dependent_variable}'
+                                    f'_{data_file_name}_{fold}/{test_run}_best-model.pt')
         document_embeddings = model.document_embeddings
         print("model loaded")
 
@@ -86,6 +91,8 @@ if not _use:
     else:
         if test_run == "fasttext":
             document_embeddings = DocumentPoolEmbeddings([WordEmbeddings('en-twitter')])
+        elif test_run == "albert-base-v2":
+            document_embeddings = DocumentPoolEmbeddings([TransformerWordEmbeddings(model=test_run)])
         elif test_run == "roberta":
             document_embeddings = DocumentPoolEmbeddings(
                 [RoBERTaEmbeddings(pretrained_model_name_or_path="roberta-large", layers="21,22,23,24",
@@ -150,10 +157,10 @@ if not _use:
 
     # if trained embeddings
     if not pool:
-        df.to_csv(f"./data/embeddings/{dependent_variable}_{test_run}_encoded_sentences_{fold}.csv")
+        df.to_csv(f"./data/embeddings/{dependent_variable}_{data_file_name}_{test_run}_encoded_sentences_{fold}.csv")
     # if pooled embeddings
     else:
-        df.to_csv(f"./data/embeddings/{dependent_variable}_{test_run}_encoded_sentences_pooled.csv")
+        df.to_csv(f"./data/embeddings/{dependent_variable}_{data_file_name}_{test_run}_encoded_sentences_pooled.csv")
 
 # if universal sentence encoder (USE)
 else:
@@ -185,5 +192,6 @@ else:
     df["dummy_id"] = data["dummy_id"].astype(str)
 
     # output USE embeddings
-    df.to_csv(f"./data/embeddings/{dependent_variable}_USE_encoded_sentences.csv")
-    print("USE embeddings saved to: ", f"./data/embeddings/{dependent_variable}_USE_encoded_sentences.csv")
+    df.to_csv(f"./data/embeddings/{dependent_variable}_{data_file_name}_USE_encoded_sentences.csv")
+    print("USE embeddings saved to: ", f"./data/embeddings/"
+                                       f"{dependent_variable}_{data_file_name}_USE_encoded_sentences.csv")

@@ -5,8 +5,6 @@ from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.naive_bayes import BernoulliNB, GaussianNB
 import sklearn
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import KFold
 import xgboost as xgb
 import random
 import shap
@@ -14,6 +12,7 @@ import datatable as dt
 import argparse
 import _utils
 import matplotlib.pyplot as plt
+import os
 
 parser = argparse.ArgumentParser(description='Classify data')
 parser.add_argument('--fold', required=False, type=int, default=0)
@@ -29,8 +28,11 @@ parser.add_argument('--test_run', required=True, type=str, default="", help="mod
 parser.add_argument('--dependent_variable', required=True, type=str, default="respect",
                     help="dependent_variable e.g. respect")
 parser.add_argument('--pooled', required=False, default=False, action='store_true')
+parser.add_argument("--filepath", required=False, default='input_file.xlsx', type=str)
 
 args = parser.parse_args()
+filepath = os.path.join('./data/source_data/', args.filepath)
+data_file_name = args.filepath.split('.')[0]
 folds = args.folds
 _fold = args.fold
 _shap = args.shap
@@ -41,9 +43,8 @@ dependent_variable = args.dependent_variable
 pooled = args.pooled
 
 
-# <H1> Preparing data split: 5 fold cross validation </H1>
-# <h3> The procedure is identical as when splitting data for the purpose of training selected Language Models
-df = pd.read_excel(f"./data/source_data/input_file.xlsx", converters={'dummy_id': str})
+# read original data file
+df = pd.read_excel(filepath, converters={'dummy_id': str})
 
 # use only selected columns
 df = df[[dependent_variable, "text"]]
@@ -52,21 +53,22 @@ df = df[[dependent_variable, "text"]]
 # setup random state
 np.random.seed(13)
 
-# define number of folds
-kf = KFold(n_splits=folds, random_state=13, shuffle=True)
-
 # create data splits for Deep Learning Language Models trained with Flair framework
 train_indexes = dict()
 test_indexes = dict()
 
 # train sets for Machine Learning
 train_ml = dict()
+
+# define number of folds
+kf = _utils.splitter(folds=folds, df=df)
+
 i = 0
 
 # this split (with folds=5) results in: 20% test, 10% val, 70% train for Flair framework
 # and the same 20% test and 80 % train for Machine Learning
 indexes = list(range(0, len(df)))
-for train_index, test_index in kf.split(indexes):
+for train_index, test_index in kf:
     test_indexes[i] = test_index
     train_ml[i] = train_index
     i += 1
@@ -95,10 +97,12 @@ for emname, embedding in embeddings:
         # read encoded sentences by the selected language model
         if pooled:
             dfemb = dt.fread(
-                f"./data/embeddings/{dependent_variable}_{embedding}_encoded_sentences_pooled.csv").to_pandas()
+                f"./data/embeddings/{dependent_variable}"
+                f"_{data_file_name}_{embedding}_encoded_sentences_pooled.csv").to_pandas()
         else:
             dfemb = dt.fread(
-                f"./data/embeddings/{dependent_variable}_{embedding}_encoded_sentences_{fold}.csv").to_pandas()
+                f"./data/embeddings/{dependent_variable}"
+                f"_{data_file_name}_{embedding}_encoded_sentences_{fold}.csv").to_pandas()
 
         embfeatures = [f"{emname}{fold}row"]
 
@@ -140,7 +144,7 @@ if _shap is None:
     # define which classification models to use
     models = [xgb.XGBClassifier(objective='multi:softprob', n_jobs=24, learning_rate=0.03,
                                 max_depth=10, subsample=0.7, colsample_bytree=0.6,
-                                random_state=2020, n_estimators=_estimators, tree_method='gpu_hist')]
+                                random_state=2020, n_estimators=_estimators)]  # optionally add: tree_method='gpu_hist'
 
     # use features from selected language models
     for language_model in all_language_models:
@@ -155,7 +159,9 @@ if _shap is None:
             allTrues[f"{language_model}_{type(classification_model).__name__}"] = trues.copy()
 
     # save model predictions together with true sentiment labels
-    pd.DataFrame(allPreds).to_csv(f"./data/{dependent_variable}_{test_run}_predictions.csv")
-    pd.DataFrame(allTrues).to_csv(f"./data/{dependent_variable}_{test_run}_trues.csv")
+    pd.DataFrame(allPreds).to_csv(f"./data/partial_results/{dependent_variable}_{data_file_name}_{test_run}"
+                                  f"_predictions.csv")
+    pd.DataFrame(allTrues).to_csv(f"./data/partial_results/{dependent_variable}_{data_file_name}_{test_run}"
+                                  f"_trues.csv")
 
-    _utils.compute_metrics(dependent_variable=dependent_variable, test_run=test_run)
+    _utils.compute_metrics(dependent_variable=dependent_variable, test_run=test_run, data_file_name=data_file_name)

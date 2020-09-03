@@ -30,8 +30,11 @@ parser.add_argument('--fine_tune', required=False, default=False,
 parser.add_argument('--test_run', required=True, type=str, default='fasttext')
 parser.add_argument('--dependent_variable', required=False, type=str, default='respect')
 parser.add_argument('--mbs', required=False, type=int, default=8)
+parser.add_argument("--filepath", required=False, default='input_file.xlsx', type=str)
 
 args = parser.parse_args()
+filepath = os.path.join('./data/source_data/', args.filepath)
+data_file_name = args.filepath.split('.')[0]
 folds = args.folds
 epochs = args.epochs
 test_run = args.test_run
@@ -48,9 +51,9 @@ if block_print:
 
 # prepare paths for loading data for k fold training
 for i in range(folds):
-    path.append(f"./data/model_{dependent_variable}_{str(i)}/")
+    path.append(f"./data/models/{dependent_variable}_{data_file_name}_{str(i)}/")
     try:
-        os.mkdir(f'./data/model_{dependent_variable}_{str(i)}')
+        os.mkdir(f'./data/models/{dependent_variable}_{data_file_name}_{str(i)}')
     except FileExistsError:
         continue
 
