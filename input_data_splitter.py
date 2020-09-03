@@ -20,11 +20,15 @@ args = parser.parse_args()
 
 filepath = os.path.join('./data/source_data/', args.filepath)
 data_file_name = args.filepath.split('.')[0]
+data_file_extension = args.filepath.split('.')[1]
 dependent_variable = args.dependent_variable
 folds = args.folds
 
 # read original data file
-df = pd.read_excel(filepath, converters={'dummy_id': str})
+if data_file_extension == "xlsx":
+    df = pd.read_excel(filepath, converters={'dummy_id': str})
+elif data_file_extension == "csv":
+    df = pd.read_csv(filepath, converters={'dummy_id': str})
 
 # use only selected columns
 df = df[[dependent_variable, "text"]]

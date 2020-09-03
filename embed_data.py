@@ -47,6 +47,7 @@ args = parser.parse_args()
 
 filepath = os.path.join('./data/source_data/', args.filepath)
 data_file_name = args.filepath.split('.')[0]
+data_file_extension = args.filepath.split('.')[1]
 fold = args.fold
 test_run = args.test_run
 if "/" in test_run:
@@ -59,7 +60,10 @@ dependent_variable = args.dependent_variable
 bs = args.bs
 
 # read data
-df = pd.read_excel(filepath, converters={'dummy_id': str})
+if data_file_extension == "xlsx":
+    df = pd.read_excel(filepath, converters={'dummy_id': str})
+elif data_file_extension == "csv":
+    df = pd.read_csv(filepath, converters={'dummy_id': str})
 
 print(len(df))
 df = df.head(nrows)
