@@ -5,10 +5,12 @@ start=`date +%s`
 # 'bert-large-cased' 'bert-large-uncased')
 
 declare -a transformer_list=()
-
+# models that will not be fine-tuned, instead LSTM over embeddings will be deployed. To change LSTM parameters
+# change model_train.py
 #declare -a other_model_list=('fasttext' 'roberta_lstm')
 declare -a other_model_list=()
-# define pretrained SentenceTransformer models to be tested
+# define pretrained SentenceTransformer models to be tested, or other models that will not be trained
+# instead token embeddings provided by them will be pooled (averaged)
 #declare -a pretrained_model_list=('distilbert-base-nli-stsb-mean-tokens' 'roberta-large-nli-stsb-mean-tokens')
 declare -a pretrained_model_list=('albert-base-v2')
 
