@@ -1,7 +1,9 @@
 
-A repository enabling classification of short text entities with various language models.
+This repository contains data, code and results for a research paper:
 
-If you intend to use it please contact us directly regarding how to cite our work.
+"Treat every person with respect” - automated respect classification on Twitter (in preparation)
+
+If you intend to use it please contact me directly regarding how to cite this work.
 
 
 ## Acknowledgment
