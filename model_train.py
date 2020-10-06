@@ -143,3 +143,5 @@ for i in range(folds):
     os.rename(src=f"{path[i]}best-model.pt", dst=f"{path[i]}{test_run}_best-model.pt")
     os.remove(f"{path[i]}final-model.pt")
     os.rename(src=f"{path[i]}training.log", dst=f"{path[i]}{test_run}_training_{i}.log")
+    os.remove(f"{path[i]}weights.txt")
+    os.rename(src=f"{path[i]}loss.tsv", dst=f"{path[i]}{test_run}_{i}_loss.tsv")
