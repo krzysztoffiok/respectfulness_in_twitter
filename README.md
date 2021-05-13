@@ -1,9 +1,7 @@
 
-This repository contains data, code and results for a research paper:
+This repository contains data, code and results for a research paper. If you intend to use it please cite the following study:
 
-"Treat every person with respect” - automated respect classification on Twitter (in preparation)
-
-If you intend to use it please contact me directly regarding how to cite this work.
+Fiok, K., Karwowski, W., Gutierrez, E., Liciaga, T., Belmonte, A., & Capobianco, R. (2021). Automated Classification of Evidence of Respect in the Communication through Twitter. Applied Sciences, 11(3), 1294.
 
 
 ## Acknowledgment
